@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Services - Hotel Paradise</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <strong>🏨 Hotel Paradise</strong>
+      <a href="index.html">Home</a>
+      <a href="booking.html">Book a Room</a>
+      <a href="services.html" class="active">Services</a>
+      <a href="admin.html">Admin</a>
+    </nav>
+    <h1>Our Services</h1>
+  </header>
+
+  <main>
+    <section>
+      <h2>Hotel Facilities</h2>
+      <div id="facilities" class="grid-container"></div>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const facilitiesData = [
+        { emoji: "🍽", title: "Restaurant", description: "World-class cuisine from breakfast to dinner." },
+        { emoji: "💆", title: "Spa", description: "Wellness & massage therapies for full relaxation." },
+        { emoji: "🏊", title: "Swimming Pool", description: "Outdoor heated pool with lifeguard." },
+        { emoji: "🏋️", title: "Gym", description: "Modern equipment, open 24/7 for guests." },
+        { emoji: "🎉", title: "Events & Conferences", description: "Book halls for meetings, weddings, and expos." }
+      ];
+
+      const facilitiesContainer = document.getElementById('facilities');
+
+      facilitiesData.forEach(facility => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${facility.emoji} ${facility.title}</h3><p>${facility.description}</p>`;
+        facilitiesContainer.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>

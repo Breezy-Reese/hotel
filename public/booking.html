@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Book a Room - Hotel Paradise</title>
+<link rel="stylesheet" href="style.css"/>
+<style>
+  body { font-family: Arial; margin: 20px; background: #f4f4f4; }
+  h1, h2 { text-align: center; }
+  .room-card { background: white; padding: 15px; border-radius: 10px; width: 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: 10px; text-align: center; display: inline-block; }
+  .room-card button { padding: 5px 10px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer; }
+  .room-card button.available { background: #28a745; color: white; }
+  .room-card button.available:hover { background: #1e7e34; }
+  .room-card button.booked { background: gray; color: white; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <nav class="nav">
+    <strong>🏨 Hotel Paradise</strong>
+    <a href="index.html">Home</a>
+    <a href="booking.html" class="active">Book a Room</a>
+    <a href="services.html">Services</a>
+    <a href="admin.html">Admin</a>
+  </nav>
+  <h1>Book a Room</h1>
+</header>
+
+<main>
+  <div id="availableRooms"></div>
+</main>
+
+<script>
+  // Preload sample rooms if localStorage is empty
+  let rooms = JSON.parse(localStorage.getItem('rooms')) || [];
+  if (rooms.length === 0) {
+    rooms = [
+      { name: "Deluxe Suite", price: 250, status: "Available" },
+      { name: "Standard Room", price: 150, status: "Available" },
+      { name: "Single Room", price: 100, status: "Available" },
+      { name: "Double Room", price: 180, status: "Available" },
+      { name: "Family Suite", price: 300, status: "Available" },
+      { name: "Presidential Suite", price: 500, status: "Available" },
+      { name: "Economy Room", price: 80, status: "Available" },
+      { name: "Luxury Suite", price: 400, status: "Available" },
+      { name: "Honeymoon Suite", price: 350, status: "Available" },
+      { name: "Business Room", price: 220, status: "Available" },
+      { name: "Ocean View Room", price: 300, status: "Available" },
+      { name: "Garden View Room", price: 200, status: "Available" },
+      { name: "Penthouse Suite", price: 600, status: "Available" }
+    ];
+    localStorage.setItem('rooms', JSON.stringify(rooms));
+  }
+
+  function displayRooms() {
+    const rooms = JSON.parse(localStorage.getItem('rooms')) || [];
+    const container = document.getElementById('availableRooms');
+    container.innerHTML = '';
+
+    if (rooms.length === 0) {
+      container.innerHTML = '<p style="text-align:center;">No rooms available.</p>';
+      return;
+    }
+
+    rooms.forEach(room => {
+      const card = document.createElement('div');
+      card.className = 'room-card';
+
+      // Determine button style and functionality
+      let buttonHTML = '';
+      if (room.status === "Available") {
+        buttonHTML = `<button class="available" onclick="bookRoom('${room.name}')">Book Now</button>`;
+      } else {
+        buttonHTML = `<button class="booked" disabled>Booked</button>`;
+      }
+
+      card.innerHTML = `
+        <h3>${room.name}</h3>
+        <p>Price: $${room.price} / night</p>
+        <p>Status: ${room.status}</p>
+        ${buttonHTML}
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function bookRoom(roomName) {
+    let rooms = JSON.parse(localStorage.getItem('rooms')) || [];
+    let room = rooms.find(r => r.name === roomName);
+    if (room && room.status === "Available") {
+      room.status = "Booked";
+      localStorage.setItem('rooms', JSON.stringify(rooms));
+      alert(`You have successfully booked ${roomName}!`);
+      displayRooms();
+    } else {
+      alert("Room is no longer available.");
+    }
+  }
+
+  displayRooms();
+</script>
+</body>
+</html>

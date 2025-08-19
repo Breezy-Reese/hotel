@@ -1,0 +1,12 @@
+CREATE TABLE IF NOT EXISTS bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  checkin TEXT NOT NULL,
+  checkout TEXT NOT NULL,
+  room_type TEXT NOT NULL,
+  stripe_session_id TEXT,
+  paid INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
