@@ -23,7 +23,6 @@
     <a href="index.html">Home</a>
     <a href="booking.html" class="active">Book a Room</a>
     <a href="services.html">Services</a>
-    <a href="admin.html">Admin</a>
   </nav>
   <h1>Book a Room</h1>
 </header>
@@ -33,7 +32,7 @@
 </main>
 
 <script>
-  // Preload sample rooms if localStorage is empty
+  // Preload rooms if localStorage is empty
   let rooms = JSON.parse(localStorage.getItem('rooms')) || [];
   if (rooms.length === 0) {
     rooms = [
@@ -43,7 +42,7 @@
       { name: "Double Room", price: 180, status: "Available" },
       { name: "Family Suite", price: 300, status: "Available" },
       { name: "Presidential Suite", price: 500, status: "Available" },
-      { name: "Economy Room", price: 80, status: "Available" },
+      { name: "Economy Room", price: 1, status: "Available" },
       { name: "Luxury Suite", price: 400, status: "Available" },
       { name: "Honeymoon Suite", price: 350, status: "Available" },
       { name: "Business Room", price: 220, status: "Available" },
@@ -59,19 +58,13 @@
     const container = document.getElementById('availableRooms');
     container.innerHTML = '';
 
-    if (rooms.length === 0) {
-      container.innerHTML = '<p style="text-align:center;">No rooms available.</p>';
-      return;
-    }
-
     rooms.forEach(room => {
       const card = document.createElement('div');
       card.className = 'room-card';
 
-      // Determine button style and functionality
       let buttonHTML = '';
       if (room.status === "Available") {
-        buttonHTML = `<button class="available" onclick="bookRoom('${room.name}')">Book Now</button>`;
+        buttonHTML = `<button class="available" onclick="payWithMPesa('${room.name}', ${room.price})">Book & Pay</button>`;
       } else {
         buttonHTML = `<button class="booked" disabled>Booked</button>`;
       }
@@ -86,20 +79,40 @@
     });
   }
 
-  function bookRoom(roomName) {
-    let rooms = JSON.parse(localStorage.getItem('rooms')) || [];
-    let room = rooms.find(r => r.name === roomName);
-    if (room && room.status === "Available") {
-      room.status = "Booked";
-      localStorage.setItem('rooms', JSON.stringify(rooms));
-      alert(`You have successfully booked ${roomName}!`);
-      displayRooms();
-    } else {
-      alert("Room is no longer available.");
+  async function payWithMPesa(roomName, amount) {
+    const phone = prompt("Enter your phone number (2547XXXXXXXX):");
+    if (!phone) return alert("Phone number is required!");
+
+    try {
+      const res = await fetch('http://localhost:4242/stkpush', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ amount, phone, roomName })
+});
+
+      const data = await res.json();
+
+      if (data.ResponseCode === "0") {
+        alert("STK Push sent! Complete payment on your phone.");
+        // Optionally mark booked only after callback confirmation
+        let rooms = JSON.parse(localStorage.getItem('rooms')) || [];
+        let room = rooms.find(r => r.name === roomName);
+        if (room) {
+          room.status = "Booked"; 
+          localStorage.setItem('rooms', JSON.stringify(rooms));
+        }
+        displayRooms();
+      } else {
+        alert("Payment initiation failed: " + data.ResponseDescription);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error sending payment request.");
     }
   }
 
   displayRooms();
 </script>
+
 </body>
 </html>

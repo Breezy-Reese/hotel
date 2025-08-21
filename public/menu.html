@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Restaurant Menu - Hotel Paradise</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .menu-img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav">
+      <strong>🏨 Hotel Paradise</strong>
+      <a href="index.html">Home</a>
+      <a href="booking.html">Book a Room</a>
+      <a href="services.html">Services</a>
+      <a href="menu.html" class="active">Menu</a>
+    </nav>
+    <h1>Our Restaurant Menu</h1>
+  </header>
+
+  <main>
+    <div id="menu-items" class="grid-container"></div>
+    <button class="btn" onclick="viewCart()">View Cart</button>
+  </main>
+
+  <script>
+    const menuItems = [
+      { id: 1, name: "Grilled Salmon", price: 1200, image: "images/salmon.jpg" },
+      { id: 2, name: "Beef Steak", price: 1500, image: "images/steak.jpg" },
+      { id: 3, name: "Caesar Salad", price: 800, image: "images/salad.jpg" }
+    ];
+    let cart = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('menu-items');
+      menuItems.forEach(item => {
+        container.innerHTML += `
+          <div class="card">
+            <img src="${item.image}" alt="${item.name}" class="menu-img">
+            <h3>${item.name}</h3>
+            <p><strong>KES ${item.price}</strong></p>
+            <button class="btn" onclick="addToCart(${item.id})">Add to Cart</button>
+          </div>`;
+      });
+    });
+
+    function addToCart(id) {
+      const item = menuItems.find(food => food.id === id);
+      cart.push(item);
+      alert(item.name + " added to cart!");
+    }
+
+    function viewCart() {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      window.location.href = 'checkout.html';
+    }
+  </script>
+</body>
+</html>

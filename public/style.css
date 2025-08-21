@@ -200,6 +200,35 @@ footer {
     font-size: 1rem;
   }
 }
+/* Enhance Hero Section Text Visibility */
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 3rem 1rem;
+  background: url('images/pexels-dada-_design-240566386-12277300.jpg') center/cover no-repeat;
+  color: #fff;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4); /* dark overlay */
+  border-radius: 12px;
+}
+
+.hero h2, .hero p {
+  position: relative;
+  z-index: 1;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* shadow for readability */
+}
+
 
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,Segoe UI,Arial}
@@ -218,3 +247,71 @@ table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff;border
 th,td{padding:10px;border-bottom:1px solid #eee;text-align:left}
 .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef5ff}
 .actions{display:flex;gap:8px}
+
+/*services*/
+.facilities {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.facilities h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+.facility-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.facility {
+  background: #fff;
+  padding: 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.facility h4 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.facility p {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.facility:hover {
+  transform: translateY(-5px);
+}
+
+/*menu*/
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+.btn {
+  background: #007BFF;
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #0056b3;
+}
+
