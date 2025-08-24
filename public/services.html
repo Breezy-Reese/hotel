@@ -1,3 +1,7 @@
+<?php
+include 'config.php';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -151,7 +155,7 @@ const poolEvents = [
 
 let cart = [];
 
-// Show/Hide & Add Functions
+// Show/Hide & Add Functions (same as before)
 function showMenu() {
   document.getElementById('menu-section').classList.remove('hidden');
   const container = document.getElementById('menu-items'); container.innerHTML = '';
@@ -233,12 +237,55 @@ function showCart(){
   modal.style.display='block';
 }
 function closeModal(){document.getElementById('checkout-modal').style.display='none';}
-function payNow(){
-  if(cart.length===0){alert("Your cart is empty!"); return;}
-  alert("Payment Successful! Thank you for your booking.");
-  cart = [];
-  closeModal();
+
+// Updated payNow function
+async function payNow(){
+  if(cart.length===0){ alert("Your cart is empty!"); return; }
+
+  // prompt for customer info
+  const name = prompt("Enter your full name for the booking:");
+  if(!name) { alert("Name is required."); return; }
+  const email = prompt("Enter your email for the booking:");
+  if(!email) { alert("Email is required."); return; }
+
+  // bookingDate in server-friendly format
+  const bookingDate = new Date().toISOString().slice(0,19).replace('T',' ');
+
+  try {
+    for(const item of cart){
+      console.log("Booking service:", item);
+      const res = await fetch('http://localhost:4242/book-service', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          serviceId: item.id,
+          bookingDate: bookingDate
+        })
+      });
+
+      // handle response
+      let payload;
+      try { payload = await res.json(); } catch(e) { payload = { status: res.ok ? 'ok' : 'error', message: await res.text() }; }
+      console.log("Response:", payload);
+
+      if(!res.ok || (payload.status && payload.status !== 'success' && payload.status !== 'ok')) {
+        const msg = (payload && (payload.message||payload.error)) ? (payload.message||payload.error) : `HTTP ${res.status}`;
+        alert(`Booking failed for "${item.name}": ${msg}`);
+        return;
+      }
+    }
+
+    alert("Payment Successful! Your booking(s) have been recorded.");
+    cart = [];
+    closeModal();
+  } catch (err) {
+    console.error("payNow error:", err);
+    alert("Payment failed. Check console or server logs.");
+  }
 }
 </script>
+
 </body>
 </html>

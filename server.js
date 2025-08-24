@@ -1,151 +1,128 @@
 const express = require('express');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 4242;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ------------------ MIDDLEWARE ------------------
+app.use(express.json()); // for parsing application/json
+app.use(express.urlencoded({ extended: true })); // for parsing URL-encoded data
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Database
-const db = new sqlite3.Database('bookings.db', (err) => {
-  if (err) console.error("❌ Error opening database:", err);
-  else console.log("✅ Connected to SQLite database");
-});
+// ------------------ DATABASE CONFIG ------------------
+const DB_CONFIG = {
+  host: 'localhost',
+  user: 'root',
+  password: '', // empty if no password
+  database: 'hoteldb',
+  waitForConnections: true,
+  connectionLimit: 10
+};
 
-// Create tables + default admin
-db.serialize(() => {
-  // Bookings table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS bookings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      checkin TEXT NOT NULL,
-      checkout TEXT NOT NULL,
-      room_type TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+let pool;
 
-  // Admins table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS admins (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL
-    );
-  `);
-
-  // Insert default admin if none exists
-  db.get(`SELECT COUNT(*) AS count FROM admins`, (err, row) => {
-    if (err) {
-      console.error("❌ Error checking admins table:", err);
-    } else if (row.count === 0) {
-      // hash default password
-      const defaultPass = "admin123";
-      bcrypt.hash(defaultPass, 10, (err, hash) => {
-        if (err) return console.error("❌ Error hashing password:", err);
-
-        db.run(
-          `INSERT INTO admins(username, password) VALUES (?, ?)`,
-          ["admin", hash],
-          (err) => {
-            if (err) console.error("❌ Error inserting default admin:", err);
-            else console.log("✅ Default admin added (username: admin, password: admin123)");
-          }
-        );
-      });
-    } else {
-      console.log("ℹ️ Admin already exists in database");
-    }
-  });
-});
-
-// Booking route
-app.post('/book', (req, res) => {
-  const { name, email, checkin, checkout, room } = req.body;
-  if (!name || !email || !checkin || !checkout || !room) {
-    return res.status(400).send('❌ Missing required fields');
+// ------------------ DATABASE CONNECTION ------------------
+(async () => {
+  try {
+    pool = mysql.createPool(DB_CONFIG).promise();
+    const [r] = await pool.query('SELECT DATABASE() AS db, VERSION() AS version, NOW() AS server_time');
+    console.log('✅ Connected to MySQL DB:', r[0]);
+  } catch (err) {
+    console.error('❌ DB connect failed at startup:', err);
+    process.exit(1);
   }
+})();
 
-  db.run(
-    `INSERT INTO bookings(name,email,checkin,checkout,room_type) VALUES (?,?,?,?,?)`,
-    [name, email, checkin, checkout, room],
-    function (err) {
-      if (err) {
-        console.error("❌ Database error:", err);
-        return res.status(500).send('Database error');
-      }
-      console.log(`✅ Booking saved for ${name} (${email})`);
-      res.redirect('/success.html');
-    }
-  );
-});
-
-// Admin login route (with bcrypt)
-app.post('/admin/login', (req, res) => {
-  const { username, password } = req.body;
-
-  if (!username || !password) {
-    return res.status(400).send("❌ Please enter username and password");
+// ------------------ DEBUG ROUTE ------------------
+app.get("/debug/db-test", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT NOW() AS server_time");
+    res.json({ success: true, db_time: rows[0]?.server_time || null });
+  } catch (err) {
+    console.error("DB test error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
+});
 
-  db.get(
-    `SELECT * FROM admins WHERE username = ?`,
-    [username],
-    (err, row) => {
-      if (err) {
-        console.error("❌ Database error:", err);
-        return res.status(500).send('Database error');
-      }
-      if (!row) {
-        console.warn(`⚠️ Failed login attempt for user: ${username}`);
-        return res.status(401).send('Invalid credentials');
-      }
+// ------------------ BOOKING ROUTE ------------------
+app.post('/book', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { name, email, checkin, checkout, room_type } = body;
 
-      // compare entered password with hashed password
-      bcrypt.compare(password, row.password, (err, result) => {
-        if (err) {
-          console.error("❌ Error comparing passwords:", err);
-          return res.status(500).send("Internal error");
-        }
-        if (!result) {
-          console.warn(`⚠️ Wrong password for user: ${username}`);
-          return res.status(401).send("Invalid credentials");
-        }
-
-        console.log(`✅ Admin ${username} logged in successfully`);
-        res.redirect('/dashboard.html');
-      });
+    if (!name || !email || !checkin || !checkout || !room_type) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
-  );
+
+    const sql = `INSERT INTO bookings (name, email, checkin, checkout, room_type, created_at)
+                 VALUES (?, ?, ?, ?, ?, NOW())`;
+    await pool.query(sql, [name, email, checkin, checkout, room_type]);
+
+    console.log(`✅ Booking saved for ${name} (${email})`);
+    res.json({ success: true, message: 'Booking saved successfully' });
+  } catch (err) {
+    console.error('❌ Booking error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-// Admin: get all bookings
-app.get('/api/bookings', (req, res) => {
-  db.all(`SELECT * FROM bookings ORDER BY created_at DESC`, (err, rows) => {
-    if (err) {
-      console.error("❌ Error fetching bookings:", err);
-      return res.status(500).json({ error: 'Database error' });
+// ------------------ ADMIN LOGIN ROUTE ------------------
+app.post('/admin/login', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { username, password } = body;
+
+    if (!username || !password) {
+      return res.status(400).json({ success: false, message: 'Username and password required' });
     }
-    res.json(rows);
-  });
+
+    const [rows] = await pool.query('SELECT * FROM admins WHERE username = ?', [username]);
+    if (!rows.length) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    const user = rows[0];
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    console.log(`✅ Admin ${username} logged in`);
+    res.json({ success: true, message: 'Login successful' });
+  } catch (err) {
+    console.error('❌ Admin login error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-// Serve pages
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// ------------------ GET ALL BOOKINGS (ADMIN) ------------------
+app.get('/api/bookings', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM bookings ORDER BY created_at DESC');
+    res.json({ success: true, bookings: rows });
+  } catch (err) {
+    console.error('❌ Fetch bookings error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-app.get('/success.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'success.html'));
+// ------------------ MOCK PAYMENT ROUTE ------------------
+app.post('/pay', async (req, res) => {
+  try {
+    const body = req.body || {};
+    const { name, email, amount } = body;
+
+    if (!name || !email || !amount) {
+      return res.status(400).json({ success: false, message: 'Missing payment fields' });
+    }
+
+    console.log(`💰 Payment request received for ${name} (${email}) amount: ${amount}`);
+    res.json({ success: true, message: `Payment request for ${amount} received for ${name} (${email})` });
+  } catch (err) {
+    console.error('❌ Payment error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+// ------------------ START SERVER ------------------
+app.listen(PORT, () => console.log(`🚀 Hotel server running on http://localhost:${PORT}`));
