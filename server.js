@@ -1,128 +1,156 @@
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
+const mysql = require('mysql2/promise');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 4242;
 
-// ------------------ MIDDLEWARE ------------------
-app.use(express.json()); // for parsing application/json
-app.use(express.urlencoded({ extended: true })); // for parsing URL-encoded data
+// Middleware
+app.use(express.json());
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ------------------ DATABASE CONFIG ------------------
-const DB_CONFIG = {
+// Database connection
+const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '', // empty if no password
+  password: '',
   database: 'hoteldb',
   waitForConnections: true,
-  connectionLimit: 10
-};
+  connectionLimit: 10,
+  queueLimit: 0
+});
 
-let pool;
-
-// ------------------ DATABASE CONNECTION ------------------
-(async () => {
+// Initialize DB
+async function initDB() {
   try {
-    pool = mysql.createPool(DB_CONFIG).promise();
-    const [r] = await pool.query('SELECT DATABASE() AS db, VERSION() AS version, NOW() AS server_time');
-    console.log('✅ Connected to MySQL DB:', r[0]);
+    const conn = await pool.getConnection();
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        status ENUM('Available','Booked') DEFAULT 'Available'
+      )
+    `);
+
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS bookings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        room_id INT NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        checkin DATE NOT NULL,
+        checkout DATE NOT NULL,
+        FOREIGN KEY (room_id) REFERENCES rooms(id)
+      )
+    `);
+
+    const [rows] = await conn.query('SELECT COUNT(*) AS cnt FROM rooms');
+    if (rows[0].cnt === 0) {
+      await conn.query(`
+        INSERT INTO rooms (name, price, status) VALUES
+        ('Deluxe Suite', 250, 'Available'),
+        ('Standard Room', 150, 'Available'),
+        ('Single Room', 100, 'Available'),
+        ('Double Room', 180, 'Available'),
+        ('Family Suite', 300, 'Available'),
+        ('Presidential Suite', 500, 'Available'),
+        ('Economy Room', 80, 'Booked'),
+        ('Business Suite', 350, 'Available'),
+        ('Penthouse Suite', 600, 'Available'),
+        ('Luxury Suite', 800, 'Available'),
+        ('Honeymoon Suite', 400, 'Available'),
+        ('Garden Room', 120, 'Available')
+      `);
+      console.log('✅ Rooms seeded successfully');
+    }
+
+    conn.release();
+    console.log('✅ DB initialized');
   } catch (err) {
-    console.error('❌ DB connect failed at startup:', err);
-    process.exit(1);
+    console.error('DB Init Error:', err);
   }
-})();
+}
 
-// ------------------ DEBUG ROUTE ------------------
-app.get("/debug/db-test", async (req, res) => {
+initDB();
+
+// Fetch rooms
+app.get('/rooms', async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT NOW() AS server_time");
-    res.json({ success: true, db_time: rows[0]?.server_time || null });
+    const [rows] = await pool.query('SELECT * FROM rooms');
+    res.json({ success: true, rooms: rows });
   } catch (err) {
-    console.error("DB test error:", err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Error fetching rooms' });
   }
 });
 
-// ------------------ BOOKING ROUTE ------------------
+// Robust Book route with transaction
 app.post('/book', async (req, res) => {
-  try {
-    const body = req.body || {};
-    const { name, email, checkin, checkout, room_type } = body;
+  const { name, email, roomId, checkin, checkout } = req.body;
 
-    if (!name || !email || !checkin || !checkout || !room_type) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+  if (!name || !email || !roomId || !checkin || !checkout) {
+    return res.json({ success: false, message: 'All fields are required' });
+  }
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // Check room availability
+    const [roomRows] = await conn.query('SELECT status FROM rooms WHERE id=? FOR UPDATE', [roomId]);
+    if (roomRows.length === 0) {
+      await conn.rollback();
+      return res.json({ success: false, message: 'Room not found' });
+    }
+    if (roomRows[0].status === 'Booked') {
+      await conn.rollback();
+      return res.json({ success: false, message: 'Room already booked' });
     }
 
-    const sql = `INSERT INTO bookings (name, email, checkin, checkout, room_type, created_at)
-                 VALUES (?, ?, ?, ?, ?, NOW())`;
-    await pool.query(sql, [name, email, checkin, checkout, room_type]);
+    // Insert booking
+    await conn.query(
+      'INSERT INTO bookings (room_id, name, email, checkin, checkout) VALUES (?, ?, ?, ?, ?)',
+      [roomId, name, email, checkin, checkout]
+    );
 
-    console.log(`✅ Booking saved for ${name} (${email})`);
-    res.json({ success: true, message: 'Booking saved successfully' });
+    // Update room status
+    await conn.query('UPDATE rooms SET status="Booked" WHERE id=?', [roomId]);
+
+    await conn.commit();
+    res.json({ success: true, message: 'Room booked successfully!' });
   } catch (err) {
-    console.error('❌ Booking error:', err);
-    res.status(500).json({ success: false, error: err.message });
+    await conn.rollback();
+    console.error('Booking Error:', err);
+    res.status(500).json({ success: false, message: 'Booking failed. Check server logs.' });
+  } finally {
+    conn.release();
   }
 });
 
-// ------------------ ADMIN LOGIN ROUTE ------------------
-app.post('/admin/login', async (req, res) => {
+// Book a service (dummy payment for now)
+app.post('/book-service', async (req, res) => {
+  const { name, email, serviceId, bookingDate } = req.body;
+
+  if (!name || !email || !serviceId || !bookingDate) {
+    return res.json({ success: false, message: 'All fields are required' });
+  }
+
   try {
-    const body = req.body || {};
-    const { username, password } = body;
+    console.log('Service booking:', { name, email, serviceId, bookingDate });
 
-    if (!username || !password) {
-      return res.status(400).json({ success: false, message: 'Username and password required' });
-    }
-
-    const [rows] = await pool.query('SELECT * FROM admins WHERE username = ?', [username]);
-    if (!rows.length) return res.status(401).json({ success: false, message: 'Invalid credentials' });
-
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ success: false, message: 'Invalid credentials' });
-
-    console.log(`✅ Admin ${username} logged in`);
-    res.json({ success: true, message: 'Login successful' });
+    // No services table defined in DB; simulate success
+    res.json({ success: true, message: 'Service booked successfully!' });
   } catch (err) {
-    console.error('❌ Admin login error:', err);
-    res.status(500).json({ success: false, error: err.message });
+    console.error('Service Booking Error:', err);
+    res.status(500).json({ success: false, message: 'Payment failed. Check server logs.' });
   }
 });
 
-// ------------------ GET ALL BOOKINGS (ADMIN) ------------------
-app.get('/api/bookings', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM bookings ORDER BY created_at DESC');
-    res.json({ success: true, bookings: rows });
-  } catch (err) {
-    console.error('❌ Fetch bookings error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
+
+app.listen(PORT, () => {
+  console.log(`🚀 Hotel server running on http://localhost:${PORT}`);
 });
-
-// ------------------ MOCK PAYMENT ROUTE ------------------
-app.post('/pay', async (req, res) => {
-  try {
-    const body = req.body || {};
-    const { name, email, amount } = body;
-
-    if (!name || !email || !amount) {
-      return res.status(400).json({ success: false, message: 'Missing payment fields' });
-    }
-
-    console.log(`💰 Payment request received for ${name} (${email}) amount: ${amount}`);
-    res.json({ success: true, message: `Payment request for ${amount} received for ${name} (${email})` });
-  } catch (err) {
-    console.error('❌ Payment error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ------------------ START SERVER ------------------
-app.listen(PORT, () => console.log(`🚀 Hotel server running on http://localhost:${PORT}`));

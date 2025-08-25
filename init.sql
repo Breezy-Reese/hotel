@@ -1,7 +1,6 @@
 -- ==========================
 -- Database: hoteldb
 -- ==========================
-
 CREATE DATABASE IF NOT EXISTS hoteldb;
 USE hoteldb;
 
