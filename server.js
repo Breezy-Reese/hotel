@@ -27,6 +27,7 @@ async function initDB() {
   try {
     const conn = await pool.getConnection();
 
+    // Create rooms table if missing
     await conn.query(`
       CREATE TABLE IF NOT EXISTS rooms (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,18 +37,8 @@ async function initDB() {
       )
     `);
 
-    await conn.query(`
-      CREATE TABLE IF NOT EXISTS bookings (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        room_id INT NOT NULL,
-        name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) NOT NULL,
-        checkin DATE NOT NULL,
-        checkout DATE NOT NULL,
-        FOREIGN KEY (room_id) REFERENCES rooms(id)
-      )
-    `);
-
+    // No need to create bookings table since we use room_bookings
+    // Seed sample rooms
     const [rows] = await conn.query('SELECT COUNT(*) AS cnt FROM rooms');
     if (rows[0].cnt === 0) {
       await conn.query(`
@@ -83,12 +74,12 @@ app.get('/rooms', async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM rooms');
     res.json({ success: true, rooms: rows });
   } catch (err) {
-    console.error(err);
+    console.error('Rooms Fetch Error:', err);
     res.status(500).json({ success: false, message: 'Error fetching rooms' });
   }
 });
 
-// Robust Book route with transaction
+// Book route
 app.post('/book', async (req, res) => {
   const { name, email, roomId, checkin, checkout } = req.body;
 
@@ -111,11 +102,13 @@ app.post('/book', async (req, res) => {
       return res.json({ success: false, message: 'Room already booked' });
     }
 
-    // Insert booking
+    // Insert booking into correct table
     await conn.query(
-      'INSERT INTO bookings (room_id, name, email, checkin, checkout) VALUES (?, ?, ?, ?, ?)',
-      [roomId, name, email, checkin, checkout]
-    );
+  'INSERT INTO room_bookings (user_id, room_id, name, email, checkin, checkout) VALUES (?, ?, ?, ?, ?, ?)',
+  [1, roomId, name, email, checkin, checkout] // 1 = Guest User ID
+);
+
+    console.log('Booking saved:', { name, email, roomId, checkin, checkout });
 
     // Update room status
     await conn.query('UPDATE rooms SET status="Booked" WHERE id=?', [roomId]);
@@ -131,26 +124,36 @@ app.post('/book', async (req, res) => {
   }
 });
 
-// Book a service (dummy payment for now)
+// Service booking
 app.post('/book-service', async (req, res) => {
   const { name, email, serviceId, bookingDate } = req.body;
 
   if (!name || !email || !serviceId || !bookingDate) {
-    return res.json({ success: false, message: 'All fields are required' });
+    return res.status(400).json({ success: false, message: 'All fields are required' });
   }
 
   try {
-    console.log('Service booking:', { name, email, serviceId, bookingDate });
+    const [result] = await pool.query(
+      `INSERT INTO service_bookings 
+      (name, email, user_id, service_id, booking_date, status) 
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      [name, email, 1, serviceId, bookingDate, 'pending']
+    );
 
-    // No services table defined in DB; simulate success
-    res.json({ success: true, message: 'Service booked successfully!' });
+    // Confirm that one row was inserted
+    if (result.affectedRows === 1) {
+      return res.json({ success: true, message: 'Service booked successfully!' });
+    } else {
+      return res.status(500).json({ success: false, message: 'Booking failed to save.' });
+    }
   } catch (err) {
     console.error('Service Booking Error:', err);
-    res.status(500).json({ success: false, message: 'Payment failed. Check server logs.' });
+    return res.status(500).json({ success: false, message: 'Database error. Check logs.' });
   }
 });
 
 
+// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Hotel server running on http://localhost:${PORT}`);
 });
