@@ -1,0 +1,194 @@
+<!-- admin/dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Dashboard</title>
+<style>
+  body { font-family: Arial; padding: 16px; background:#f6f6f6 }
+  table { width:100%; border-collapse: collapse; margin-bottom: 20px; background:#fff }
+  th,td { padding:8px; border:1px solid #ddd; text-align:left }
+  th { background:#4CAF50; color:#fff }
+  .controls { margin-bottom:12px }
+  button { padding:6px 10px; margin-left:4px }
+</style>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <div style="margin-bottom:8px">
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <section>
+    <h2>Rooms</h2>
+    <div class="controls">
+      <input id="roomName" placeholder="Room name" />
+      <input id="roomPrice" placeholder="Price" type="number" />
+      <button id="addRoomBtn">Add Room</button>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Price</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody id="roomsTable"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Room Bookings</h2>
+    <table>
+      <thead><tr><th>ID</th><th>User</th><th>Room</th><th>Guest</th><th>Email</th><th>Check-in</th><th>Check-out</th><th>Status</th></tr></thead>
+      <tbody id="roomBookingsTable"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Service Bookings</h2>
+    <table>
+      <thead><tr><th>ID</th><th>User</th><th>Service</th><th>Guest</th><th>Email</th><th>Booking Date</th><th>Status</th><th>Payment</th></tr></thead>
+      <tbody id="serviceBookingsTable"></tbody>
+    </table>
+  </section>
+
+<script>
+  // helper
+  async function api(path, opts = {}) {
+    opts.credentials = 'include';
+    const res = await fetch(path, opts);
+    if (!res.ok) {
+      // try to get JSON message
+      let body;
+      try { body = await res.json(); } catch(e) { body = null; }
+      const msg = (body && body.message) ? body.message : `HTTP ${res.status}`;
+      throw new Error(msg);
+    }
+    return res.json();
+  }
+
+  // load rooms
+  async function loadRooms() {
+    try {
+      const data = await api('/api/admin/rooms');
+      const t = document.getElementById('roomsTable'); t.innerHTML = '';
+      data.rooms.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.name}</td>
+          <td>${r.price}</td>
+          <td>${r.status}</td>
+          <td>
+            <button onclick="deleteRoom(${r.id})">Delete</button>
+          </td>
+        `;
+        t.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('loadRooms', err);
+      alert('Failed to load rooms: ' + err.message);
+    }
+  }
+
+  // load room bookings
+  async function loadRoomBookings() {
+    try {
+      const data = await api('/api/admin/room-bookings');
+      const t = document.getElementById('roomBookingsTable'); t.innerHTML = '';
+      data.bookings.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${b.id}</td>
+          <td>${b.user_id}</td>
+          <td>${b.room_name}</td>
+          <td>${b.guest_name}</td>
+          <td>${b.email}</td>
+          <td>${b.checkin ? new Date(b.checkin).toLocaleDateString() : ''}</td>
+          <td>${b.checkout ? new Date(b.checkout).toLocaleDateString() : ''}</td>
+          <td>${b.status}</td>
+        `;
+        t.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('loadRoomBookings', err);
+      alert('Failed to load room bookings: ' + err.message);
+    }
+  }
+
+  // load service bookings
+  async function loadServiceBookings() {
+    try {
+      const data = await api('/api/admin/service-bookings');
+      const t = document.getElementById('serviceBookingsTable'); t.innerHTML = '';
+      data.bookings.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${b.id}</td>
+          <td>${b.user_id}</td>
+          <td>${b.service_name}</td>
+          <td>${b.guest_name}</td>
+          <td>${b.email}</td>
+          <td>${b.booking_date ? new Date(b.booking_date).toLocaleString() : ''}</td>
+          <td>${b.status}</td>
+          <td>${b.payment_status || 'unpaid'}</td>
+        `;
+        t.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('loadServiceBookings', err);
+      alert('Failed to load service bookings: ' + err.message);
+    }
+  }
+
+  // add room
+  document.getElementById('addRoomBtn').addEventListener('click', async () => {
+    const name = document.getElementById('roomName').value.trim();
+    const price = parseFloat(document.getElementById('roomPrice').value);
+    if (!name || isNaN(price)) return alert('Name and price required');
+    try {
+      await api('/api/admin/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, price })
+      });
+      document.getElementById('roomName').value = '';
+      document.getElementById('roomPrice').value = '';
+      loadRooms();
+    } catch (err) {
+      console.error('addRoom', err);
+      alert('Failed to add room: ' + err.message);
+    }
+  });
+
+  // delete room
+  async function deleteRoom(id) {
+    if (!confirm('Delete room?')) return;
+    try {
+      await api('/api/admin/rooms/' + id, { method: 'DELETE' });
+      loadRooms(); loadRoomBookings();
+    } catch (err) {
+      console.error('deleteRoom', err);
+      alert('Failed to delete room: ' + err.message);
+    }
+  }
+  window.deleteRoom = deleteRoom;
+
+  // logout
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    try {
+      await api('/admin/logout', { method: 'POST' });
+      window.location.href = '/admin/login.html';
+    } catch (err) {
+      console.error('logout', err);
+      alert('Logout failed');
+    }
+  });
+
+  // initial load
+  (async () => {
+    await loadRooms();
+    await loadRoomBookings();
+    await loadServiceBookings();
+  })();
+
+</script>
+</body>
+</html>
