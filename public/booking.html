@@ -62,50 +62,45 @@
 </div>
 
 <script>
-const USD_TO_KES = 150;
 let selectedRoomId = null;
 
+// Fetch rooms from server
 async function fetchRooms() {
   try {
     const res = await fetch('http://localhost:4242/rooms');
     const data = await res.json();
-    const rooms = Array.isArray(data) ? data : data.rooms;
+    const rooms = data.rooms || [];
+    const container = document.getElementById('availableRooms');
 
-    if (rooms && rooms.length > 0) {
-      displayRooms(rooms);
-    } else {
-      document.getElementById('availableRooms').innerHTML = '<p style="text-align:center;color:red;">No rooms available.</p>';
+    if (!rooms.length) {
+      container.innerHTML = '<p style="text-align:center;color:red;">No rooms available.</p>';
+      return;
     }
+
+    container.innerHTML = '';
+    rooms.forEach(room => {
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      const buttonHTML =
+        room.status === "Available"
+          ? `<button class="available" onclick="openBookingModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')">Book & Pay</button>`
+          : `<button class="booked" disabled>Booked</button>`;
+
+      card.innerHTML = `
+        <h3>${room.name}</h3>
+        <p>Price: KES ${room.price} / night</p>
+        <p>Status: ${room.status}</p>
+        ${buttonHTML}
+      `;
+      container.appendChild(card);
+    });
   } catch (err) {
     console.error(err);
     document.getElementById('availableRooms').innerHTML = '<p style="text-align:center;color:red;">Error fetching rooms from server</p>';
   }
 }
 
-function displayRooms(rooms) {
-  const container = document.getElementById('availableRooms');
-  container.innerHTML = '';
-
-  rooms.forEach(room => {
-    const card = document.createElement('div');
-    card.className = 'room-card';
-
-    const buttonHTML =
-      room.status === "Available"
-        ? `<button class="available" onclick="openBookingModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')">Book & Pay</button>`
-        : `<button class="booked" disabled>Booked</button>`;
-
-    card.innerHTML = `
-      <h3>${room.name}</h3>
-      <p>Price: KES ${room.price * USD_TO_KES} / night</p>
-      <p>Status: ${room.status}</p>
-      ${buttonHTML}
-    `;
-    container.appendChild(card);
-  });
-}
-
-// Open modal
+// Open booking modal
 function openBookingModal(roomId, roomName) {
   selectedRoomId = roomId;
   document.getElementById('modalRoomName').innerText = roomName;
@@ -129,8 +124,12 @@ async function submitBooking() {
   const checkin = document.getElementById('checkin').value;
   const checkout = document.getElementById('checkout').value;
 
-  if (!name || !email || !checkin || !checkout) {
+  if (!name || !email || !checkin || !checkout || !selectedRoomId) {
     return alert('All fields are required.');
+  }
+
+  if (new Date(checkin) > new Date(checkout)) {
+    return alert('Check-out date must be after check-in date.');
   }
 
   const payload = { name, email, roomId: selectedRoomId, checkin, checkout };
@@ -144,11 +143,11 @@ async function submitBooking() {
     const data = await res.json();
 
     if (data.success) {
-      alert(`✅ Room booked successfully!`);
+      alert(`✅ ${data.message}`);
       closeModal();
       fetchRooms();
     } else {
-      alert('❌ Booking failed: ' + data.message);
+      alert(`❌ Booking failed: ${data.message}`);
     }
   } catch (err) {
     console.error(err);
