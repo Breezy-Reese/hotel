@@ -61,15 +61,14 @@
   </div>
 </div>
 
+<script src="services.js"></script>
 <script>
 let selectedRoomId = null;
 
-// Fetch rooms from server
-async function fetchRooms() {
+// Load and display rooms from server
+async function loadRooms() {
   try {
-    const res = await fetch('http://localhost:4242/rooms');
-    const data = await res.json();
-    const rooms = data.rooms || [];
+    const rooms = await fetchRooms();
     const container = document.getElementById('availableRooms');
 
     if (!rooms.length) {
@@ -83,7 +82,7 @@ async function fetchRooms() {
       card.className = 'room-card';
       const buttonHTML =
         room.status === "Available"
-          ? `<button class="available" onclick="openBookingModal(${room.id}, '${room.name.replace(/'/g, "\\'")}')">Book & Pay</button>`
+          ? `<button class="available" onclick="openBookingModal('${room._id}', '${room.name.replace(/'/g, "\\'")}')">Book & Pay</button>`
           : `<button class="booked" disabled>Booked</button>`;
 
       card.innerHTML = `
@@ -161,7 +160,7 @@ window.onclick = function(e) {
 }
 
 // Load rooms on page load
-fetchRooms();
+loadRooms();
 </script>
 </body>
 </html>

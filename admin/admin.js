@@ -1,19 +1,19 @@
 async function loadRoomBookings() {
-    const res = await fetch('http://localhost:4242/admin/room-bookings');
+    const res = await fetch('/admin/bookings', { credentials: 'include' });
 
-    const bookings = await res.json();
-    const table = document.querySelector('#roomBookingsTable tbody');
+    const data = await res.json();
+    const table = document.querySelector('#roomBookingsTable');
     table.innerHTML = '';
-    bookings.forEach(b => {
+    data.bookings.forEach(b => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${b.id}</td>
-            <td>${b.user_id}</td>
-            <td>${b.room_id}</td>
+            <td>${b._id}</td>
+            <td>${b.userId ? b.userId.name : 'Unknown'}</td>
+            <td>${b.roomId ? b.roomId.name : 'Unknown'}</td>
             <td>${b.name}</td>
             <td>${b.email}</td>
-            <td>${b.check_in}</td>
-            <td>${b.check_out}</td>
+            <td>${b.checkin ? new Date(b.checkin).toLocaleDateString() : ''}</td>
+            <td>${b.checkout ? new Date(b.checkout).toLocaleDateString() : ''}</td>
             <td>${b.status}</td>
             <td>${b.payment_status}</td>
         `;
@@ -22,20 +22,20 @@ async function loadRoomBookings() {
 }
 
 async function loadServiceBookings() {
-    const res = await fetch('http://localhost:4242/admin/room-bookings');
+    const res = await fetch('/admin/service-bookings', { credentials: 'include' });
 
-    const bookings = await res.json();
-    const table = document.querySelector('#serviceBookingsTable tbody');
+    const data = await res.json();
+    const table = document.querySelector('#serviceBookingsTable');
     table.innerHTML = '';
-    bookings.forEach(b => {
+    data.bookings.forEach(b => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${b.id}</td>
+            <td>${b._id}</td>
             <td>${b.name}</td>
             <td>${b.email}</td>
-            <td>${b.user_id}</td>
-            <td>${b.service_id}</td>
-            <td>${b.booking_date}</td>
+            <td>${b.userId ? b.userId.name : 'Unknown'}</td>
+            <td>${b.serviceId ? b.serviceId.name : 'Unknown'}</td>
+            <td>${b.booking_date ? new Date(b.booking_date).toLocaleString() : ''}</td>
             <td>${b.status}</td>
             <td>${b.payment_status}</td>
         `;
