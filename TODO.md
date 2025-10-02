@@ -1,0 +1,3 @@
+- [x] Fix frontend UI to refresh room status after booking in public/booking.html
+- [ ] Test the booking functionality to ensure room shows as booked after booking
+- [ ] Verify admin can mark room available

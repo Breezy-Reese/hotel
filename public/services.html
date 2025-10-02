@@ -1,289 +1,162 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Services - Hotel Paradise</title>
-  <link rel="stylesheet" href="style.css"/>
+  <meta charset="UTF-8">
+  <title>Hotel Services</title>
   <style>
-    .menu-img { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; }
-    .hidden { display: none; }
-    .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);}
-    .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;}
-    .btn { padding: 8px 16px; margin: 5px; cursor: pointer; }
-    .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .card { padding: 10px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+    header { background: #007bff; color: #fff; padding: 1rem; text-align: center; }
+    nav { background: #0056b3; display: flex; justify-content: center; flex-wrap: wrap; padding: 0.5rem; }
+    nav a { color: #fff; text-decoration: none; margin: 0.5rem 1rem; font-weight: bold; cursor: pointer; transition: color 0.2s; }
+    nav a:hover { color: #ffd700; }
+    .section { margin: 2rem auto; max-width: 1000px; background: #fff; padding: 1rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); display: none; }
+    .section.active { display: block; }
+    .services { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .card { border: 1px solid #ddd; padding: 1rem; border-radius: 8px; text-align: center; background: #fafafa; transition: transform 0.2s; }
+    .card:hover { transform: scale(1.03); }
+    .card img { width: 100%; height: 160px; object-fit: cover; border-radius: 6px; margin-bottom: 0.5rem; }
+    .card h3 { margin: 0.5rem 0; color: #007bff; }
+    .card p { margin: 0.3rem 0; color: #444; }
+    .btn { background: #007bff; color: white; border: none; padding: 0.5rem 1rem; margin-top: 0.5rem; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background: #0056b3; }
+    .back-btn { background: #fff; color: #007bff; border: 1px solid #007bff; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; margin-bottom: 1rem; font-size: 14px; transition: 0.3s; }
+    .back-btn:hover { background: #007bff; color: #fff; }
+    .booking-form { display: none; margin-top: 10px; text-align: left; border-top: 1px solid #ddd; padding-top: 10px; }
+    .booking-form label { display: block; margin: 0.3rem 0 0.1rem; }
+    .booking-form input { width: 100%; padding: 0.4rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid #ccc; }
   </style>
 </head>
 <body>
-<header>
-  <nav class="nav">
-    <strong>🏨 Hotel Paradise</strong>
-    <a href="index.html">Home</a>
-    <a href="booking.html">Book a Room</a>
-    <a href="services.html" class="active">Services</a>
-  </nav>
-  <h1>Our Services</h1>
-</header>
+<header><h1>Our Hotel Services</h1></header>
 
-<main>
-  <section>
-    <h2>Hotel Facilities</h2>
-    <div id="facilities" class="grid-container"></div>
-  </section>
+<nav>
+  <a onclick="showSection('restaurant-section')">Restaurant</a>
+  <a onclick="showSection('gym-section')">Gym & Fitness</a>
+  <a onclick="showSection('spa-section')">Spa & Wellness</a>
+  <a onclick="showSection('conference-section')">Conference & Events</a>
+  <a onclick="showSection('pool-section')">Swimming & Pool</a>
+</nav>
 
-  <!-- Menu Section -->
-  <section id="menu-section" class="hidden" style="margin-top: 2rem;">
-    <h2>Restaurant Menu</h2>
-    <div id="menu-items" class="grid-container"></div>
-    <button class="btn" onclick="showCart()">View Cart & Checkout</button>
-    <button class="btn" onclick="hideMenu()">Back to Services</button>
-  </section>
-
-  <!-- Spa Section -->
-  <section id="spa-section" class="hidden" style="margin-top: 2rem;">
-    <h2>Spa Treatments</h2>
-    <div id="spa-items" class="grid-container"></div>
-    <button class="btn" onclick="showCart()">Checkout Spa Services</button>
-    <button class="btn" onclick="hideSpa()">Back to Services</button>
-  </section>
-
-  <!-- Gym Section -->
-  <section id="gym-section" class="hidden" style="margin-top: 2rem;">
-    <h2>Gym Equipment</h2>
-    <div id="gym-items" class="grid-container"></div>
-    <button class="btn" onclick="showCart()">Checkout Gym Tools</button>
-    <button class="btn" onclick="hideGym()">Back to Services</button>
-  </section>
-
-  <!-- Events & Conferences Section -->
-  <section id="events-section" class="hidden" style="margin-top: 2rem;">
-    <h2>Events & Conferences</h2>
-    <div id="events-items" class="grid-container"></div>
-    <button class="btn" onclick="showCart()">Checkout Events</button>
-    <button class="btn" onclick="hideEvents()">Back to Services</button>
-  </section>
-
-  <!-- Swimming Pool Section -->
-  <section id="pool-section" class="hidden" style="margin-top: 2rem;">
-    <h2>Swimming Pool Events</h2>
-    <div id="pool-items" class="grid-container"></div>
-    <button class="btn" onclick="showCart()">Checkout Pool Events</button>
-    <button class="btn" onclick="hidePool()">Back to Services</button>
-  </section>
-</main>
-
-<!-- Payment Modal -->
-<div id="checkout-modal" class="modal">
-  <div class="modal-content">
-    <h3>Checkout</h3>
-    <div id="checkout-items"></div>
-    <p>Total: <strong id="total-price">KES 0</strong></p>
-    <button class="btn" onclick="payNow()">Pay Now</button>
-    <button class="btn" onclick="closeModal()">Cancel</button>
-  </div>
+<div class="section" id="restaurant-section">
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+  <h2>Restaurant</h2>
+  <div class="services" id="restaurant-items"></div>
+</div>
+<div class="section" id="gym-section">
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+  <h2>Gym & Fitness</h2>
+  <div class="services" id="gym-items"></div>
+</div>
+<div class="section" id="spa-section">
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+  <h2>Spa & Wellness</h2>
+  <div class="services" id="spa-items"></div>
+</div>
+<div class="section" id="conference-section">
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+  <h2>Conference & Events</h2>
+  <div class="services" id="conference-items"></div>
+</div>
+<div class="section" id="pool-section">
+  <button class="back-btn" onclick="goBack()">⬅ Back</button>
+  <h2>Swimming & Pool</h2>
+  <div class="services" id="pool-items"></div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const facilitiesData = [
-    { emoji: "🍽", title: "Restaurant", description: "World-class cuisine from breakfast to dinner." },
-    { emoji: "💆", title: "Spa", description: "Wellness & massage therapies for full relaxation." },
-    { emoji: "🏊", title: "Swimming Pool", description: "Outdoor heated pool with lifeguard." },
-    { emoji: "🏋️", title: "Gym", description: "Modern equipment, open 24/7 for guests." },
-    { emoji: "🎉", title: "Events & Conferences", description: "Book halls for meetings, weddings, and expos." }
-  ];
+const API_BASE = "http://localhost:4242";
 
-  const facilitiesContainer = document.getElementById('facilities');
-  facilitiesData.forEach(facility => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <h3>${facility.emoji} ${facility.title}</h3>
-      <p>${facility.description}</p>
-      ${facility.title === 'Restaurant' ? '<button class="btn" onclick="showMenu()">View Menu</button>' : ''}
-      ${facility.title === 'Spa' ? '<button class="btn" onclick="showSpaServices()">View Spa Services</button>' : ''}
-      ${facility.title === 'Gym' ? '<button class="btn" onclick="showGymTools()">View Tools</button>' : ''}
-      ${facility.title === 'Events & Conferences' ? '<button class="btn" onclick="showEvents()">View Packages</button>' : ''}
-      ${facility.title === 'Swimming Pool' ? '<button class="btn" onclick="showPool()">View Pool Events</button>' : ''}
-    `;
-    facilitiesContainer.appendChild(card);
-  });
-});
-
-// Items with images
-const menuItems = [
-  { id: 1, name: "Grilled Salmon", price: 1200, image: "images/salmon.jpg" },
-  { id: 2, name: "Beef Steak", price: 1500, image: "images/beefsteak.jpg" },
-  { id: 3, name: "Caesar Salad", price: 800, image: "images/caesar salad.jpg" },
-  { id: 4, name: "Pasta Primavera", price: 900, image: "images/pasta primavera.jpg" },
-  { id: 5, name: "Chocolate Cake", price: 600, image: "images/chocolate cake.jpg" },
-  { id: 6, name: "Fruit Smoothie", price: 500, image: "images/fruit smoothie.jpg" }
-];
-
-const spaServices = [
-  { id: 101, name: "Swedish Massage", price: 2500, image: "images/swedish massage.jpg" },
-  { id: 102, name: "Aromatherapy", price: 2000, image: "images/aromatherapy.jpg" },
-  { id: 103, name: "Hot Stone Therapy", price: 3000, image: "images/hot stone therapy.jpg" },
-  { id: 104, name: "Facial Treatment", price: 1800, image: "images/facial treatment.jpg" }
-];
-
-const gymTools = [
-  { id: 201, name: "Treadmill Rental", price: 500, image: "images/treadmill.jpg" },
-  { id: 202, name: "Dumbbells Rental", price: 300, image: "images/dumbells set.jpg" },
-  { id: 203, name: "Exercise Bike", price: 400, image: "images/exercise bike.jpg" },
-  { id: 204, name: "Rowing Machine", price: 450, image: "images/rowing machine.jpg" }
-];
-
-const eventPackages = [
-  { id: 301, name: "Wedding Hall Booking", price: 20000, image: "images/wedding hall.jpg" },
-  { id: 302, name: "Conference Room Booking", price: 15000, image: "images/conference room.jpg" },
-  { id: 303, name: "Birthday Party Package", price: 12000, image: "images/birthday.jpg" },
-  { id: 304, name: "Exhibition Hall Rental", price: 25000, image: "images/exhibition hall.jpg" }
-];
-
-const poolEvents = [
-  { id: 401, name: "Pool Party (2 hrs)", price: 5000, image: "images/pool party.jpg" },
-  { id: 402, name: "Family Swim Session", price: 3000, image: "images/family swim.jpg" },
-  { id: 403, name: "Night Swim Event", price: 7000, image: "images/night swim.jpg" },
-  { id: 404, name: "Private Pool Rental", price: 10000, image: "images/private pool.jpg" }
-];
-
-let cart = [];
-
-// Show/Hide & Add Functions (same as before)
-function showMenu() {
-  document.getElementById('menu-section').classList.remove('hidden');
-  const container = document.getElementById('menu-items'); container.innerHTML = '';
-  menuItems.forEach(item => container.innerHTML += `
-    <div class="card">
-      <img src="${item.image}" alt="${item.name}" class="menu-img">
-      <h3>${item.name}</h3>
-      <p><strong>KES ${item.price}</strong></p>
-      <button class="btn" onclick="addToCart(${item.id}, 'menu')">Add to Cart</button>
-    </div>`);
-}
-function hideMenu(){document.getElementById('menu-section').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'});}
-function showSpaServices(){
-  document.getElementById('spa-section').classList.remove('hidden');
-  const container = document.getElementById('spa-items'); container.innerHTML='';
-  spaServices.forEach(item => container.innerHTML += `
-    <div class="card">
-      <img src="${item.image}" alt="${item.name}" class="menu-img">
-      <h3>${item.name}</h3>
-      <p><strong>KES ${item.price}</strong></p>
-      <button class="btn" onclick="addToCart(${item.id}, 'spa')">Book & Pay</button>
-    </div>`);
-}
-function hideSpa(){document.getElementById('spa-section').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'});}
-function showGymTools(){
-  document.getElementById('gym-section').classList.remove('hidden');
-  const container=document.getElementById('gym-items'); container.innerHTML='';
-  gymTools.forEach(item => container.innerHTML += `
-    <div class="card">
-      <img src="${item.image}" alt="${item.name}" class="menu-img">
-      <h3>${item.name}</h3>
-      <p><strong>KES ${item.price}</strong></p>
-      <button class="btn" onclick="addToCart(${item.id}, 'gym')">Book & Pay</button>
-    </div>`);
-}
-function hideGym(){document.getElementById('gym-section').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'});}
-function showEvents(){
-  document.getElementById('events-section').classList.remove('hidden');
-  const container=document.getElementById('events-items'); container.innerHTML='';
-  eventPackages.forEach(item => container.innerHTML += `
-    <div class="card">
-      <img src="${item.image}" alt="${item.name}" class="menu-img">
-      <h3>${item.name}</h3>
-      <p><strong>KES ${item.price}</strong></p>
-      <button class="btn" onclick="addToCart(${item.id}, 'event')">Book & Pay</button>
-    </div>`);
-}
-function hideEvents(){document.getElementById('events-section').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'});}
-function showPool(){
-  document.getElementById('pool-section').classList.remove('hidden');
-  const container=document.getElementById('pool-items'); container.innerHTML='';
-  poolEvents.forEach(item => container.innerHTML += `
-    <div class="card">
-      <img src="${item.image}" alt="${item.name}" class="menu-img">
-      <h3>${item.name}</h3>
-      <p><strong>KES ${item.price}</strong></p>
-      <button class="btn" onclick="addToCart(${item.id}, 'pool')">Book & Pay</button>
-    </div>`);
-}
-function hidePool(){document.getElementById('pool-section').classList.add('hidden'); window.scrollTo({top:0,behavior:'smooth'});}
-
-// Cart & Payment
-function addToCart(id,type){
-  let item;
-  if(type==='menu') item = menuItems.find(i=>i.id===id);
-  if(type==='spa') item = spaServices.find(i=>i.id===id);
-  if(type==='gym') item = gymTools.find(i=>i.id===id);
-  if(type==='event') item = eventPackages.find(i=>i.id===id);
-  if(type==='pool') item = poolEvents.find(i=>i.id===id);
-  cart.push(item);
-  alert(item.name + " added to cart!");
-}
-function showCart(){
-  const modal=document.getElementById('checkout-modal');
-  const container=document.getElementById('checkout-items'); container.innerHTML='';
-  let total=0;
-  cart.forEach(item=>{ container.innerHTML += `<p>${item.name} - KES ${item.price}</p>`; total+=item.price; });
-  document.getElementById('total-price').innerText = "KES "+total;
-  modal.style.display='block';
-}
-function closeModal(){document.getElementById('checkout-modal').style.display='none';}
-
-// Updated payNow function
-async function payNow(){
-  if(cart.length===0){ alert("Your cart is empty!"); return; }
-
-  // prompt for customer info
-  const name = prompt("Enter your full name for the booking:");
-  if(!name) { alert("Name is required."); return; }
-  const email = prompt("Enter your email for the booking:");
-  if(!email) { alert("Email is required."); return; }
-
-  // bookingDate in server-friendly format
-  const bookingDate = new Date().toISOString().slice(0,19).replace('T',' ');
-
+async function loadServices() {
   try {
-    for(const item of cart){
-      console.log("Booking service:", item);
-      const res = await fetch('http://localhost:4242/book-service', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          name: name,
-          email: email,
-          serviceId: item.id,
-          bookingDate: bookingDate
-        })
-      });
+    const res = await fetch(`${API_BASE}/admin/services`);
+    const data = await res.json();
+    const services = data.services || [];
 
-      // handle response
-      let payload;
-      try { payload = await res.json(); } catch(e) { payload = { status: res.ok ? 'ok' : 'error', message: await res.text() }; }
-      console.log("Response:", payload);
+    ["restaurant-items","gym-items","spa-items","conference-items","pool-items"].forEach(id => {
+      document.getElementById(id).innerHTML = "";
+    });
 
-      if(!res.ok || (payload.status && payload.status !== 'success' && payload.status !== 'ok')) {
-        const msg = (payload && (payload.message||payload.error)) ? (payload.message||payload.error) : `HTTP ${res.status}`;
-        alert(`Booking failed for "${item.name}": ${msg}`);
-        return;
-      }
-    }
+    services.forEach(service => {
+      const imgUrl = service.image || "/images/default.jpg";
+      const card = document.createElement("div");
+      card.className = "card";
 
-    alert("Payment Successful! Your booking(s) have been recorded.");
-    cart = [];
-    closeModal();
-  } catch (err) {
-    console.error("payNow error:", err);
-    alert("Payment failed. Check console or server logs.");
+      card.innerHTML = `
+        <img src="${imgUrl}" alt="${service.name}">
+        <h3>${service.name}</h3>
+        <p><strong>KES ${service.price || ''}</strong></p>
+        <button class="btn" onclick="toggleForm(this)">Book & Pay</button>
+        <form class="booking-form" onsubmit="submitBooking(event, '${service._id}')">
+          <label>Name</label><input type="text" name="name" required>
+          <label>Email</label><input type="email" name="email" required>
+          <label>Phone</label><input type="text" name="phone" required>
+          <label>Date & Time</label><input type="datetime-local" name="bookingDate" required>
+          <button type="submit" class="btn">Confirm Booking</button>
+        </form>
+      `;
+
+      const category = (service.category || "").toLowerCase();
+      const containerId = 
+        category.includes("restaurant") ? "restaurant-items" :
+        category.includes("gym") ? "gym-items" :
+        category.includes("spa") ? "spa-items" :
+        (category.includes("conference") || category.includes("event")) ? "conference-items" :
+        (category.includes("pool") || category.includes("swim")) ? "pool-items" : null;
+
+      if(containerId) document.getElementById(containerId).appendChild(card);
+    });
+
+    showSection("restaurant-section");
+  } catch(err) {
+    console.error("Error loading services:", err);
   }
 }
-</script>
 
+function toggleForm(button) {
+  const form = button.nextElementSibling;
+  form.style.display = form.style.display === "block" ? "none" : "block";
+}
+
+async function submitBooking(event, serviceId) {
+  event.preventDefault();
+  const form = event.target;
+
+  const data = {
+    serviceId,
+    name: form.name.value,
+    email: form.email.value,
+    phone: form.phone.value,
+    bookingDate: new Date(form.bookingDate.value).toISOString()
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/book-service`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if(result.success){
+      alert("Booked successfully!");
+      form.reset();
+      form.style.display = "none";
+    } else {
+      alert("Booking failed: " + result.message);
+    }
+  } catch(err) {
+    console.error("Booking error:", err);
+    alert("Booking failed: " + err.message);
+  }
+}
+
+function showSection(sectionId) {
+  document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
+  document.getElementById(sectionId).classList.add("active");
+}
+
+function goBack() { window.location.href = "index.html"; }
+
+loadServices();
+</script>
 </body>
 </html>

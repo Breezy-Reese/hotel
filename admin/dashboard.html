@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Admin Dashboard</title>
+<title>Hotel Admin Dashboard</title>
 <style>
   body { font-family: Arial, sans-serif; padding:16px; background:#f6f6f6; }
   h1,h2 { margin-top:0; }
@@ -17,7 +17,8 @@
 </style>
 </head>
 <body>
-<h1>Admin Dashboard</h1>
+
+<h1>Hotel Admin Dashboard</h1>
 <div style="margin-bottom:12px;">
   <button id="logoutBtn">Logout</button>
 </div>
@@ -68,9 +69,15 @@
 </section>
 
 <script>
+// ----------- API Helper -----------
 async function api(path, opts={}) {
-  opts.credentials='include';
+  opts.credentials = 'include';
   const res = await fetch(path, opts);
+  if(res.status === 403) {
+    alert('Session expired or unauthorized. Please log in again.');
+    window.location.href = '/admin/admin.html';
+    return;
+  }
   if(!res.ok){
     let body;
     try{ body = await res.json(); } catch { body=null; }
@@ -79,23 +86,23 @@ async function api(path, opts={}) {
   return res.json();
 }
 
-// ---------------- ROOMS ----------------
+// ----------- ROOMS -----------
 async function loadRooms() {
-  try{
+  try {
     const data = await api('/admin/rooms');
     const table = document.getElementById('roomsTable');
-    table.innerHTML='';
-    data.rooms.forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td>${r.id}</td>
+    table.innerHTML = '';
+    data.rooms.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r._id}</td>
         <td>${r.name}</td>
         <td>${r.price}</td>
         <td>${r.status}</td>
         <td>
-          ${r.status==='Available'
-            ? `<button onclick="deleteRoom(${r.id},this)">Delete</button>`
-            : `<button onclick="markAvailable(${r.id},this)">Mark Available</button>`}
+          ${r.status === 'Booked'
+            ? `<button onclick="markAvailable('${r._id}', this)">Mark Available</button>`
+            : `<button onclick="deleteRoom('${r._id}', this)">Delete</button>`}
         </td>
       `;
       table.appendChild(tr);
@@ -103,34 +110,54 @@ async function loadRooms() {
   } catch(e){ console.error(e); alert('Failed to load rooms'); }
 }
 
-async function markAvailable(id,btn){
+async function markAvailable(id, btn){
   if(!confirm('Mark this room as available?')) return;
   btn.disabled=true; btn.innerText='Updating...';
-  try{
-    const data = await api(`/admin/rooms/${id}/available`, {method:'POST'});
-    const row = btn.closest('tr');
-    row.children[3].innerText=data.room.status;
-    row.children[4].innerHTML=`<button onclick="deleteRoom(${id},this)">Delete</button>`;
+  try {
+    await api(`/admin/rooms/${id}/available`, { method:'POST' });
+    await loadRooms();
+    await loadRoomBookings();
   } catch(e){ console.error(e); alert('Failed to update room'); }
-  finally{ btn.disabled=false; }
+  finally { btn.disabled=false; btn.innerText='Mark Available'; }
 }
 window.markAvailable = markAvailable;
 
-async function deleteRoom(id,btn){
+async function deleteRoom(id, btn){
   if(!confirm('Delete this room?')) return;
   btn.disabled=true; btn.innerText='Deleting...';
-  try{
-    await api(`/admin/rooms/${id}`, {method:'DELETE'});
+  try {
+    await api(`/admin/rooms/${id}`, { method:'DELETE' });
     await loadRooms();
     await loadRoomBookings();
   } catch(e){ console.error(e); alert('Failed to delete room'); }
-  finally{ btn.disabled=false; }
+  finally { btn.disabled=false; btn.innerText='Delete'; }
 }
-window.deleteRoom = deleteRoom;
 
-// ---------------- ROOM BOOKINGS ----------------
-async function loadRoomBookings(){
+// ----------- ADD ROOM -----------
+document.getElementById('addRoomBtn').addEventListener('click', async()=>{
+  const name=document.getElementById('roomName').value.trim();
+  const price=parseFloat(document.getElementById('roomPrice').value);
+  if(!name||isNaN(price)) return alert('Name and price required');
+
+  const btn=document.getElementById('addRoomBtn');
+  btn.disabled=true; btn.innerText='Adding...';
+
   try{
+    await api('/admin/rooms',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name,price})
+    });
+    document.getElementById('roomName').value='';
+    document.getElementById('roomPrice').value='';
+    await loadRooms();
+  } catch(e){ console.error(e); alert('Failed to add room'); }
+  finally { btn.disabled=false; btn.innerText='Add Room'; }
+});
+
+// ----------- ROOM BOOKINGS -----------
+async function loadRoomBookings(){
+  try {
     const data = await api('/admin/bookings');
     const table = document.getElementById('roomBookingsTable');
     table.innerHTML='';
@@ -139,7 +166,7 @@ async function loadRoomBookings(){
       tr.innerHTML=`
         <td>${b.id}</td>
         <td>${b.room_name||'Deleted'}</td>
-        <td>${b.guest_name||b.booking_name||'Unknown'}</td>
+        <td>${b.guest_name||'Unknown'}</td>
         <td>${b.email||''}</td>
         <td>${b.checkin?new Date(b.checkin).toLocaleDateString():''}</td>
         <td>${b.checkout?new Date(b.checkout).toLocaleDateString():''}</td>
@@ -151,17 +178,31 @@ async function loadRoomBookings(){
   } catch(e){ console.error(e); }
 }
 
-// ---------------- SERVICE BOOKINGS ----------------
+// ----------- SERVICES -----------
+async function loadServices(){
+  try {
+    const data = await api('/admin/services');
+    const select = document.getElementById('serviceSelect');
+    select.innerHTML='';
+    data.services.forEach(s=>{
+      const opt=document.createElement('option');
+      opt.value=s._id;
+      opt.textContent=`${s.name} (${s.category})`;
+      select.appendChild(opt);
+    });
+  } catch(e){ console.error(e); alert('Failed to load services'); }
+}
+
 async function loadServiceBookings(){
-  try{
+  try {
     const data = await api('/admin/service-bookings');
-    const table = document.getElementById('serviceBookingsTable');
+    const table=document.getElementById('serviceBookingsTable');
     table.innerHTML='';
     data.bookings.forEach(b=>{
       const tr=document.createElement('tr');
       tr.innerHTML=`
-        <td>${b.id}</td>
-        <td>${b.guest_name||b.booking_name||'Unknown'}</td>
+        <td>${b._id}</td>
+        <td>${b.guest_name||'Unknown'}</td>
         <td>${b.service_name||'Not Selected'}</td>
         <td>${b.service_category||'N/A'}</td>
         <td>${b.email||''}</td>
@@ -174,27 +215,12 @@ async function loadServiceBookings(){
   } catch(e){ console.error(e); }
 }
 
-// ---------------- LOAD SERVICES ----------------
-async function loadServices(){
-  try{
-    const data = await api('/admin/services');
-    const select = document.getElementById('serviceSelect');
-    select.innerHTML='';
-    data.services.forEach(s=>{
-      const opt = document.createElement('option');
-      opt.value = s.id; // <-- numeric ID
-      opt.textContent = `${s.name} (${s.category})`;
-      select.appendChild(opt);
-    });
-  } catch(e){ console.error(e); alert('Failed to load services'); }
-}
-
-// ---------------- BOOK SERVICE ----------------
+// ----------- BOOK SERVICE -----------
 document.getElementById('bookServiceBtn').addEventListener('click', async()=>{
-  const serviceId = parseInt(document.getElementById('serviceSelect').value,10); // ensure numeric
-  const name = document.getElementById('guestName').value.trim();
-  const email = document.getElementById('guestEmail').value.trim();
-  const bookingDate = document.getElementById('serviceDate').value;
+  const serviceId=document.getElementById('serviceSelect').value;
+  const name=document.getElementById('guestName').value.trim();
+  const email=document.getElementById('guestEmail').value.trim();
+  const bookingDate=document.getElementById('serviceDate').value;
   if(!name||!email||!serviceId||!bookingDate) return alert('All fields required');
 
   try{
@@ -211,37 +237,29 @@ document.getElementById('bookServiceBtn').addEventListener('click', async()=>{
   } catch(e){ console.error(e); alert('Failed to book service'); }
 });
 
-// ---------------- ADD ROOM ----------------
-document.getElementById('addRoomBtn').addEventListener('click', async()=>{
-  const name=document.getElementById('roomName').value.trim();
-  const price=parseFloat(document.getElementById('roomPrice').value);
-  if(!name||isNaN(price)) return alert('Name and price required');
-
-  try{
-    await api('/admin/rooms',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name,price})
-    });
-    document.getElementById('roomName').value='';
-    document.getElementById('roomPrice').value='';
-    await loadRooms();
-  } catch(e){ console.error(e); alert('Failed to add room'); }
-});
-
-// ---------------- LOGOUT ----------------
+// ----------- LOGOUT -----------
 document.getElementById('logoutBtn').addEventListener('click', async()=>{
-  try{ await api('/admin/logout',{method:'POST'}); window.location.href='/admin/login.html'; }
-  catch(e){ console.error(e); }
+  try { 
+    await api('/admin/logout',{method:'POST'}); 
+    window.location.href='/admin/login.html'; 
+  } catch(e){ console.error(e); }
 });
 
-// ---------------- INIT ----------------
+// ----------- INIT -----------
 (async()=>{
   await loadRooms();
   await loadRoomBookings();
   await loadServiceBookings();
   await loadServices();
+
+  // Auto-refresh every 10 seconds
+  setInterval(async () => {
+    await loadRooms();
+    await loadRoomBookings();
+    await loadServiceBookings();
+  }, 10000);
 })();
 </script>
+
 </body>
 </html>

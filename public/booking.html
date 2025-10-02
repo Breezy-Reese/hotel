@@ -144,7 +144,7 @@ async function submitBooking() {
     if (data.success) {
       alert(`✅ ${data.message}`);
       closeModal();
-      fetchRooms();
+      loadRooms();
     } else {
       alert(`❌ Booking failed: ${data.message}`);
     }
@@ -159,8 +159,15 @@ window.onclick = function(e) {
   if (e.target === document.getElementById('bookingModal')) closeModal();
 }
 
+let refreshIntervalId = null;
+
 // Load rooms on page load
 loadRooms();
+
+// Set up automatic refresh every 10 seconds
+refreshIntervalId = setInterval(() => {
+  loadRooms();
+}, 10000);
 </script>
 </body>
 </html>
