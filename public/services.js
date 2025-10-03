@@ -1,5 +1,5 @@
 // API base URL
-const API_BASE = 'http://localhost:4242';
+const API_BASE = 'https://hotel-system-75c6.onrender.com/';
 
 // Fetch available rooms
 async function fetchRooms() {

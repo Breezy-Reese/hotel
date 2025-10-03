@@ -134,7 +134,7 @@ async function submitBooking() {
   const payload = { name, email, roomId: selectedRoomId, checkin, checkout };
 
   try {
-    const res = await fetch('http://localhost:4242/book', {
+    const res = await fetch('https://hotel-system-75c6.onrender.com/book', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

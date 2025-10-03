@@ -1,3 +1,4 @@
-- [x] Fix frontend UI to refresh room status after booking in public/booking.html
-- [ ] Test the booking functionality to ensure room shows as booked after booking
-- [ ] Verify admin can mark room available
+- [x] Update public/services.html: Change API_BASE from "http://localhost:4242" to "https://hotel-system-75c6.onrender.com/"
+- [x] Update public/booking.html: Change fetch URL from 'http://localhost:4242/book' to 'https://hotel-system-75c6.onrender.com/book'
+- [x] Verify no other localhost references in frontend files
+- [x] Confirm backend deployment settings if needed

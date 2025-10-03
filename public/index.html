@@ -1,6 +1,4 @@
-<?php
-include 'config.php';
-?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -9,16 +7,36 @@ include 'config.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hotel Paradise</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    footer {
+      background: #333;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      margin-top: 40px;
+    }
+    footer p {
+      margin: 5px 0;
+    }
+    footer a {
+      color: #ffd700;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
- <header>
-  <nav class="nav">
-    <strong>🏨 Hotel Paradise</strong>
-    <a href="index.html">Home</a>
-    <a href="booking.html">Book a Room</a>
-    <a href="services.html">Services</a>
-  </nav>
-</header>
+  <header>
+    <nav class="nav">
+      <strong>🏨 Hotel Paradise</strong>
+      <a href="index.html">Home</a>
+      <a href="booking.html">Book a Room</a>
+      <a href="services.html">Services</a>
+    </nav>
+  </header>
+
   <main class="home-main">
     <section class="hero">
       <h2>Welcome to Luxury & Comfort</h2>
@@ -29,24 +47,26 @@ include 'config.php';
       <h3>Our Rooms & Hotel Lobby</h3>
       <div class="image-gallery">
         <div class="image-card">
-  <img src="images/pexels-dada-_design-240566386-12277300.jpg" width="300" height="200" alt="Hotel Lobby">
-  <p>Suite Room</p>
-</div>
-<div class="image-card">
-  <img src="images/pexels-dada-_design-240566386-12291715.jpg" width="300" height="200" alt="Single Room">
-  <p>Single Room</p>
-</div>
-<div class="image-card">
-  <img src="images/pexels-quang-nguyen-vinh-222549-6877613.jpg" width="300" height="200" alt="Suite Room">
-  <p>Restaurant</p>
-</div>
-<div class="image-card"></div>
+          <img src="images/pexels-dada-_design-240566386-12277300.jpg" width="300" height="200" alt="Hotel Lobby">
+          <p>Suite Room</p>
+        </div>
+        <div class="image-card">
+          <img src="images/pexels-dada-_design-240566386-12291715.jpg" width="300" height="200" alt="Single Room">
+          <p>Single Room</p>
+        </div>
+        <div class="image-card">
+          <img src="images/pexels-quang-nguyen-vinh-222549-6877613.jpg" width="300" height="200" alt="Suite Room">
+          <p>Restaurant</p>
+        </div>
       </div>
     </section>
   </main>
 
   <footer>
     <p>&copy; 2025 Hotel Paradise</p>
+    <p>📍 Location: Nairobi, Kenya</p>
+    <p>📞 Phone: +254 768378553</p>
+    <p>📧 Email: <a href="mailto:info@hotelparadise.com">info@hotelparadise.com</a></p>
   </footer>
 </body>
 </html>
