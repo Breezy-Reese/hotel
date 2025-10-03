@@ -1,21 +1,21 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const session = require("express-session");
-const MongoStore = require('connect-mongo');
+const MongoStore = require("connect-mongo");
 const bodyParser = require("body-parser");
 const path = require("path");
+const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 4242;
 
 // ------------------ DB CONNECTION ------------------
-const uri = process.env.MONGO_URI || "mongodb+srv://basil59mutuku_db_user:cjq6UZRoK2Bg4cYX@plp.ycdlukc.mongodb.net/hoteldb?retryWrites=true&w=majority&appName=PLP";
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hoteldb";
 
-const db = mongoose.connection;
-db.on("error", console.error.bind(console, "MongoDB connection error:"));
-db.once("open", () => console.log("✅ MongoDB Connected"));
+mongoose.connect(uri)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 // ------------------ SCHEMAS ------------------
 const roomSchema = new mongoose.Schema({
@@ -33,7 +33,7 @@ const adminSchema = new mongoose.Schema({
 const guestSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
-  phone: String, // Added phone field
+  phone: String,
 });
 
 const roomBookingSchema = new mongoose.Schema({
@@ -60,7 +60,7 @@ const serviceBookingSchema = new mongoose.Schema({
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
   name: String,
   email: String,
-  phone: String, // Added phone field
+  phone: String,
   booking_date: Date,
   status: { type: String, enum: ["pending", "confirmed", "completed", "cancelled"], default: "pending" },
   payment_status: { type: String, enum: ["paid", "unpaid"], default: "unpaid" },
@@ -97,8 +97,6 @@ function isAdmin(req, res, next) {
 }
 
 // ------------------ ADMIN AUTH ------------------
-const bcrypt = require("bcrypt");
-
 app.post("/admin/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -124,11 +122,35 @@ app.post("/admin/logout", (req, res) => {
   });
 });
 
-// ------------------ ROOMS ------------------
+// ------------------ PUBLIC ROUTES ------------------
+
+// Public: Get all available rooms
+app.get("/rooms", async (req, res) => {
+  try {
+    const rooms = await Room.find({ status: "Available" });
+    res.json({ success: true, rooms });
+  } catch (err) {
+    console.error("Error fetching rooms:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// Public: Get all services
+app.get("/services", async (req, res) => {
+  try {
+    const services = await Service.find();
+    res.json({ success: true, services });
+  } catch (err) {
+    console.error("Error fetching services:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// ------------------ ADMIN ROOMS ------------------
 app.get("/admin/rooms", isAdmin, async (req, res) => {
   try {
     const rooms = await Room.find();
-    res.json({ rooms });
+    res.json({ success: true, rooms });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -157,7 +179,9 @@ app.post("/book", async (req, res) => {
     }
 
     const room = await Room.findById(roomId);
-    if (!room || room.status !== "Available") return res.status(400).json({ success: false, message: "Room not available" });
+    if (!room || room.status !== "Available") {
+      return res.status(400).json({ success: false, message: "Room not available" });
+    }
 
     let guest = await Guest.findOne({ email: email.toLowerCase() });
     if (!guest) {
@@ -186,11 +210,11 @@ app.post("/book", async (req, res) => {
   }
 });
 
-// ------------------ SERVICES ------------------
+// ------------------ ADMIN SERVICES ------------------
 app.get("/admin/services", isAdmin, async (req, res) => {
   try {
     const services = await Service.find();
-    res.json({ services });
+    res.json({ success: true, services });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -200,7 +224,9 @@ app.get("/admin/services", isAdmin, async (req, res) => {
 app.post("/admin/services", isAdmin, async (req, res) => {
   try {
     const { name, category, price } = req.body;
-    if (!name || !category || !price) return res.status(400).json({ success: false, message: "Name, category and price required" });
+    if (!name || !category || !price) {
+      return res.status(400).json({ success: false, message: "Name, category and price required" });
+    }
     const service = new Service({ name, category, price });
     await service.save();
     res.json({ success: true, service, message: "Service added successfully" });
@@ -251,7 +277,7 @@ app.get("/admin/bookings", isAdmin, async (req, res) => {
     const bookings = await RoomBooking.find({})
       .populate("userId", "name email phone")
       .populate("roomId", "name");
-    
+
     const formatted = bookings.map(b => ({
       id: b._id,
       room_name: b.roomId ? b.roomId.name : "Deleted",
@@ -263,7 +289,7 @@ app.get("/admin/bookings", isAdmin, async (req, res) => {
       status: b.status,
       payment_status: b.payment_status
     }));
-    res.json({ bookings: formatted });
+    res.json({ success: true, bookings: formatted });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
@@ -288,7 +314,7 @@ app.get("/admin/service-bookings", isAdmin, async (req, res) => {
       payment_status: b.payment_status
     }));
 
-    res.json({ bookings: formatted });
+    res.json({ success: true, bookings: formatted });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Server error" });
