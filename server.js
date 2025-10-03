@@ -5,6 +5,7 @@ const MongoStore = require("connect-mongo");
 const bodyParser = require("body-parser");
 const path = require("path");
 const bcrypt = require("bcrypt");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
@@ -75,6 +76,11 @@ const Service = mongoose.model("Service", serviceSchema);
 const ServiceBooking = mongoose.model("ServiceBooking", serviceBookingSchema);
 
 // ------------------ MIDDLEWARE ------------------
+app.use(cors({
+  origin: "https://hotel-flame-eta.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
