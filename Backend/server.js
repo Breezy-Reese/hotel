@@ -77,7 +77,7 @@ const ServiceBooking = mongoose.model("ServiceBooking", serviceBookingSchema);
 
 // ------------------ MIDDLEWARE ------------------
 app.use(cors({
-  origin: "https://hotel-flame-eta.vercel.app",
+  origin: ["https://hotel-flame-eta.vercel.app", "http://127.0.0.1:3000", "http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }));

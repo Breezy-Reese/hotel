@@ -64,11 +64,11 @@
 </div>
 
 <script>
-const API_BASE = "https://hotel-system-75c6.onrender.com/";
+const API_BASE = "https://hotel-system-75c6.onrender.com";
 
 async function loadServices() {
   try {
-    const res = await fetch(`${API_BASE}/admin/services`);
+    const res = await fetch(`${API_BASE}/services`);
     const data = await res.json();
     const services = data.services || [];
 
