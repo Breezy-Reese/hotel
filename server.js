@@ -8,7 +8,7 @@ const bcrypt = require("bcrypt");
 require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 
+const PORT = process.env.PORT || 4242;
 
 // ------------------ DB CONNECTION ------------------
 const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/hoteldb";
